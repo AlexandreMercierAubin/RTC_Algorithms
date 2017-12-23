@@ -97,6 +97,109 @@ unsigned int Graphe::getPoids(size_t i, size_t j) const
 }
 
 
+void  Graphe::triTopologique(size_t sommet, vector<bool> &visite, stack<size_t> &tri) const
+{
+    //marquer comme visite
+    visite[sommet]=true;
+
+    for (auto u_itr = m_listesAdj[sommet].begin(); u_itr != m_listesAdj[sommet].end(); ++u_itr)
+    {
+        if (!visite[u_itr->destination])
+        {
+            triTopologique(u_itr->destination,visite,tri);
+        }
+    }
+    tri.push(sommet);
+}
+
+
+//! \brief Algorithme de BellmanFord pour les graphes acycliques.
+//! \pre p_origine et p_destination doivent être des sommets du graphe
+//! \return la longueur du plus court chemin est retournée
+//! \param[out] le chemin est retourné (un seul noeud si p_destination == p_origine ou si p_destination est inatteignable)
+//! \return la longueur du chemin (= numeric_limits<unsigned int>::max() si p_destination n'est pas atteignable)
+//! \throws logic_error lorsque p_origine ou p_destination n'existe pas
+unsigned int Graphe::pccBellmanFord(size_t p_origine, size_t p_destination, std::vector<size_t> &p_chemin) const
+{
+    try {
+
+        p_chemin.clear();
+
+        if (p_origine == p_destination)
+        {
+            p_chemin.push_back(p_destination);
+            return 0;
+        }
+        vector<unsigned int> distance(m_listesAdj.size(), numeric_limits<unsigned int>::max());
+        vector<size_t> predecesseur(m_listesAdj.size(), numeric_limits<size_t>::max());
+        vector<bool> listeFerme(m_listesAdj.size(), false);
+
+        distance[p_origine] = 0;
+
+        stack<size_t> tri;
+        for(size_t i=0;i<m_listesAdj.size();++i)
+        {
+            if(!listeFerme[i])
+            {
+                triTopologique(i,listeFerme,tri);
+            }
+        }
+
+
+
+        //Boucle principale: touver distance[] et predecesseur[]
+        while (!tri.empty()) {
+            size_t sommet = tri.top(); //ramasser le noeud en traitement
+            tri.pop(); //enlever le noeud de listeOuvert
+
+            if (distance[sommet]!=numeric_limits<unsigned int>::max()) {
+                //relâcher les arcs
+                for (auto u_itr = m_listesAdj[sommet].begin(); u_itr != m_listesAdj[sommet].end(); ++u_itr) {
+
+
+                    //chercher la nouvelle distance
+                    unsigned int nouvelleDistance = distance[sommet] + u_itr->poids;
+
+
+                    if (nouvelleDistance < distance[u_itr->destination]) {
+                        distance[u_itr->destination] = nouvelleDistance;
+                        predecesseur[u_itr->destination] = sommet;
+                    }
+                }
+            }
+
+        }
+
+        //cas où l'on n'a pas de solution
+        if (predecesseur[p_destination] == numeric_limits<unsigned int>::max())
+        {
+            p_chemin.push_back(p_destination);
+            return numeric_limits<unsigned int>::max();
+        }
+
+        //On a une solution, donc construire le plus court chemin à l'aide de predecesseur[]
+        stack<size_t> pileDuChemin;
+        size_t numero = p_destination;
+        pileDuChemin.push(numero);
+        while (predecesseur[numero] != numeric_limits<size_t>::max())
+        {
+            numero = predecesseur[numero];
+            pileDuChemin.push(numero);
+        }
+        while (!pileDuChemin.empty())
+        {
+            size_t temp = pileDuChemin.top();
+            p_chemin.push_back(temp);
+            pileDuChemin.pop();
+        }
+        return distance[p_destination];
+    }catch(...)
+    {
+       throw logic_error("Une erreur est survenue");
+    }
+}
+
+
 //! \brief Algorithme de Dijkstra permettant de trouver le plus court chemin entre p_origine et p_destination
 //! \pre p_origine et p_destination doivent être des sommets du graphe
 //! \return la longueur du plus court chemin est retournée
@@ -146,6 +249,7 @@ unsigned int Graphe::plusCourtChemin(size_t p_origine, size_t p_destination, std
                     distance[u_itr->destination] = nouvelleDistance;
                     predecesseur[u_itr->destination] = sommet;
                     listeOuvert.push_back(u_itr->destination);
+                    push_heap(listeOuvert.begin(), listeOuvert.end());
                 }
             }
 

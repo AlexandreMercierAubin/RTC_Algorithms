@@ -34,6 +34,8 @@ public:
 	unsigned int legacyplusCourtChemin(size_t p_origine, size_t p_destination,
 								 std::vector<size_t> & p_chemin) const;
 
+	void  triTopologique(size_t sommet, std::vector<bool> &visite, std::stack<size_t> &tri) const;
+	unsigned int pccBellmanFord(size_t p_origine, size_t p_destination, std::vector<size_t> &p_chemin) const;
 private:
 
 	struct Arc
