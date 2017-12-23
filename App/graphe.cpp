@@ -221,10 +221,12 @@ unsigned int Graphe::plusCourtChemin(size_t p_origine, size_t p_destination, std
         }
         vector<unsigned int> distance(m_listesAdj.size(), numeric_limits<unsigned int>::max());
         vector<size_t> predecesseur(m_listesAdj.size(), numeric_limits<size_t>::max());
+        vector<bool> listeFermee(m_listesAdj.size(),false);
         distance[p_origine] = 0;
 
 
         vector<size_t> listeOuvert = {p_origine}; //ensemble des noeuds non solutionnés
+
         make_heap(listeOuvert.begin(), listeOuvert.end()); //faire un tas avec le vecteur
 
 
@@ -234,22 +236,24 @@ unsigned int Graphe::plusCourtChemin(size_t p_origine, size_t p_destination, std
             size_t sommet = listeOuvert.back(); //ramasser le noeud en traitement
             listeOuvert.pop_back(); //enlever le noeud de listeOuvert
 
-            //relâcher les arcs
-            for (auto u_itr = m_listesAdj[sommet].begin(); u_itr != m_listesAdj[sommet].end(); ++u_itr)
+            if(!listeFermee[sommet])
             {
-                if (u_itr->poids < 0) //gestion d'erreur, car l'algorithme n'accepte pas les negatifs
-                    throw logic_error("arc de poids negatif");
+                listeFermee[sommet]=true;
+                //relâcher les arcs
+                for (auto u_itr = m_listesAdj[sommet].begin(); u_itr != m_listesAdj[sommet].end(); ++u_itr) {
+                    if (u_itr->poids < 0) //gestion d'erreur, car l'algorithme n'accepte pas les negatifs
+                        throw logic_error("arc de poids negatif");
 
-                //chercher la nouvelle distance
-                unsigned int nouvelleDistance = distance[sommet] + u_itr->poids;
+                    //chercher la nouvelle distance
+                    unsigned int nouvelleDistance = distance[sommet] + u_itr->poids;
 
 
-                if (nouvelleDistance < distance[u_itr->destination])
-                {
-                    distance[u_itr->destination] = nouvelleDistance;
-                    predecesseur[u_itr->destination] = sommet;
-                    listeOuvert.push_back(u_itr->destination);
-                    push_heap(listeOuvert.begin(), listeOuvert.end());
+                    if (nouvelleDistance < distance[u_itr->destination]) {
+                        distance[u_itr->destination] = nouvelleDistance;
+                        predecesseur[u_itr->destination] = sommet;
+                        listeOuvert.push_back(u_itr->destination);
+                        push_heap(listeOuvert.begin(), listeOuvert.end());
+                    }
                 }
             }
 
